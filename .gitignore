@@ -1,0 +1,54 @@
+# 依赖目录
+node_modules/
+.pnp
+.pnp.js
+
+# 编译输出目录
+dist/
+build/
+*.local
+
+# 临时文件目录
+tmp/
+*.log
+logs/
+
+# 环境变量文件
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# 编辑器目录和文件
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# 操作系统文件
+Thumbs.db
+Desktop.ini
+
+# 测试覆盖率报告
+coverage/
+*.lcov
+
+# 构建缓存
+.cache/
+.parcel-cache/
+.next/
+.nuxt/
+.vuepress/dist
+.serverless/
+.fusebox/
+.dynamodb/
+
+# 后端临时文件
+backend/tmp/
+frontend/tmp/
