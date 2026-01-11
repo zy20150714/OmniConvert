@@ -75,32 +75,6 @@
         重新选择
       </el-button>
     </div>
-
-    <!-- 转换队列 -->
-    <div v-if="conversionQueue.length > 0" class="conversion-queue">
-      <h4>转换队列</h4>
-      <el-timeline>
-        <el-timeline-item 
-          v-for="(item, index) in conversionQueue" 
-          :key="index"
-          :timestamp="item.timestamp"
-          :type="item.status === 'success' ? 'success' : item.status === 'error' ? 'danger' : 'info'"
-        >
-          <div class="queue-item">
-            <div class="item-title">{{ item.filename }}</div>
-            <div class="item-status">{{ item.statusText }}</div>
-            <el-button 
-              v-if="item.status === 'success'" 
-              type="success" 
-              size="small"
-              @click="downloadFile(item.downloadUrl)"
-            >
-              <el-icon><Download /></el-icon> 下载
-            </el-button>
-          </div>
-        </el-timeline-item>
-      </el-timeline>
-    </div>
   </div>
 </template>
 
@@ -110,6 +84,9 @@ import { ElMessage } from 'element-plus';
 import { UploadFilled, Loading, Download } from '@element-plus/icons-vue';
 import axios from 'axios';
 
+// 定义事件
+const emit = defineEmits(['task-added']);
+
 // 组件状态
 const isDragover = ref(false);
 const selectedFile = ref(null);
@@ -118,7 +95,6 @@ const isUploading = ref(false);
 const uploadProgress = ref(0);
 const uploadStatus = ref('');
 const uploadStatusText = ref('');
-const conversionQueue = ref([]);
 const fileInput = ref(null);
 
 // 配置
@@ -170,9 +146,9 @@ const supportedFormatsMap = {
   'csv': ['json', 'xlsx', 'xls'],
   
   // 压缩与归档
-  'zip': [],
-  'rar': [],
-  '7z': []
+  'zip': ['extract'],
+  'rar': ['extract'],
+  '7z': ['extract']
 };
 
 // 计算属性：支持的文件格式列表
@@ -219,7 +195,10 @@ const getFormatDescription = (fromExt, toExt) => {
     'wav-flac': 'WAV转FLAC',
     'heic-jpg': 'HEIC转JPG',
     'png-jpg': 'PNG转JPG',
-    'jpg-webp': 'JPG转WEBP'
+    'jpg-webp': 'JPG转WEBP',
+    'zip-extract': '解压ZIP',
+    'rar-extract': '解压RAR',
+    '7z-extract': '解压7Z'
   };
   
   return descriptions[`${fromExt}-${toExt}`] || '格式转换';
@@ -364,12 +343,13 @@ const startUpload = async () => {
       uploadStatus.value = 'success';
       uploadStatusText.value = '转换成功！';
       
-      // 添加到转换队列
-      conversionQueue.value.unshift({
+      // 向父组件发送任务完成事件
+      emit('task-added', {
         filename: file.name,
         status: 'success',
         statusText: `转换成功: ${fileExt.toUpperCase()} → ${targetFormat.value.toUpperCase()}`,
-        timestamp: new Date().toLocaleString(),
+        size: formatFileSize(file.size),
+        conversionType: `${fileExt.toUpperCase()} → ${targetFormat.value.toUpperCase()}`,
         downloadUrl: convertResponse.data.downloadUrl
       });
       
@@ -382,12 +362,13 @@ const startUpload = async () => {
     uploadStatus.value = 'error';
     uploadStatusText.value = `转换失败: ${error.message}`;
     
-    // 添加到转换队列
-    conversionQueue.value.unshift({
+    // 向父组件发送任务失败事件
+    emit('task-added', {
       filename: file.name,
       status: 'error',
       statusText: `转换失败: ${error.message}`,
-      timestamp: new Date().toLocaleString()
+      size: formatFileSize(file.size),
+      conversionType: `${fileExt.toUpperCase()} → ${targetFormat.value.toUpperCase()}`
     });
     
     ElMessage.error(`转换失败: ${error.message}`);
@@ -402,11 +383,13 @@ const getFileType = (ext) => {
   const videoExts = ['mp4', 'avi', 'mkv', 'mov', 'flv', 'webm', 'gif'];
   const audioExts = ['mp3', 'wav', 'flac', 'm4a', 'ogg'];
   const imageExts = ['heic', 'png', 'jpg', 'jpeg', 'webp', 'bmp', 'tiff'];
+  const archiveExts = ['zip', 'rar', '7z'];
   
   if (docExts.includes(ext)) return 'document';
   if (videoExts.includes(ext)) return 'video';
   if (audioExts.includes(ext)) return 'audio';
   if (imageExts.includes(ext)) return 'image';
+  if (archiveExts.includes(ext)) return 'archive';
   return 'document';
 };
 
@@ -528,34 +511,6 @@ const formatFileSize = (size) => {
   display: flex;
   justify-content: center;
   gap: 15px;
-}
-
-.conversion-queue {
-  margin-top: 40px;
-}
-
-.conversion-queue h4 {
-  margin: 0 0 20px 0;
-  font-size: 16px;
-  color: #303133;
-}
-
-.queue-item {
-  padding: 10px;
-  background-color: #fafafa;
-  border-radius: 8px;
-}
-
-.item-title {
-  font-weight: bold;
-  color: #303133;
-  margin-bottom: 5px;
-}
-
-.item-status {
-  color: #606266;
-  font-size: 14px;
-  margin-bottom: 10px;
 }
 
 /* 响应式设计 */

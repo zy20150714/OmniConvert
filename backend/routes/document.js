@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const { exec } = require('child_process');
 const { pdfToWord } = require('../converters/pdf2word');
-const { magick, soffice } = require('../config/toolPaths');
+const { magick, soffice, pdftotext, ebookConvert } = require('../config/toolPaths');
 
 
 const uploadDir = path.join(__dirname, '../../tmp/uploads');
@@ -238,17 +238,8 @@ const executeLibreOfficeCommand = (inputPath, outputPath, targetFormat) => {
     const outputDirPath = path.dirname(outputPath);
     let command = '';
     
-    // 根据操作系统选择不同的命令
-    if (process.platform === 'win32') {
-      // Windows系统
-      command = `libreoffice --headless --convert-to ${targetFormat} "${inputPath}" --outdir "${outputDirPath}"`;
-    } else if (process.platform === 'darwin') {
-      // macOS系统
-      command = `/Applications/LibreOffice.app/Contents/MacOS/soffice --headless --convert-to ${targetFormat} "${inputPath}" --outdir "${outputDirPath}"`;
-    } else {
-      // Linux系统
-      command = `libreoffice --headless --convert-to ${targetFormat} "${inputPath}" --outdir "${outputDirPath}"`;
-    }
+    // 使用中央配置的soffice路径
+    command = `"${soffice}" --headless --convert-to ${targetFormat} "${inputPath}" --outdir "${outputDirPath}"`;
     
     console.log(`执行LibreOffice命令: ${command}`);
     
@@ -300,12 +291,9 @@ const executeLibreOfficeCommand = (inputPath, outputPath, targetFormat) => {
  */
 const executeImageMagickCommand = (inputPath, outputPath, targetFormat) => {
   return new Promise((resolve) => {
-    // 使用LibreOffice将PDF转换为图片（避免依赖Ghostscript）
+    // 使用ImageMagick将PDF转换为图片
     // 注意：PDF转图片会生成多个文件，这里只处理第一页
-    const outputDir = path.dirname(outputPath);
-    const inputFileName = path.basename(inputPath, path.extname(inputPath));
-    const tempOutputPath = path.join(outputDir, `${inputFileName}.jpg`);
-    const command = `"${soffice}" --headless --convert-to jpg:"impress_png_Export" --outdir "${outputDir}" "${inputPath}"`;
+    const command = `"${magick}" "${inputPath}[0]" "${outputPath}"`;
     
     console.log(`执行ImageMagick命令: ${command}`);
     
@@ -347,7 +335,7 @@ const executeImageMagickCommand = (inputPath, outputPath, targetFormat) => {
  */
 const executePdftotextCommand = (inputPath, outputPath) => {
   return new Promise((resolve) => {
-    const command = `pdftotext "${inputPath}" "${outputPath}"`;
+    const command = `"${pdftotext}" "${inputPath}" "${outputPath}"`;
     
     console.log(`执行pdftotext命令: ${command}`);
     
@@ -383,7 +371,7 @@ const executePdftotextCommand = (inputPath, outputPath) => {
  */
 const executeEbookConvertCommand = (inputPath, outputPath, targetFormat) => {
   return new Promise((resolve) => {
-    const command = `ebook-convert "${inputPath}" "${outputPath}"`;
+    const command = `"${ebookConvert}" "${inputPath}" "${outputPath}"`;
     
     console.log(`执行ebook-convert命令: ${command}`);
     
