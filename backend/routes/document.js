@@ -4,7 +4,8 @@ const path = require('path');
 const fs = require('fs');
 const { exec } = require('child_process');
 const { pdfToWord } = require('../converters/pdf2word');
-const { magick } = require('../config/toolPaths');
+const { magick, soffice } = require('../config/toolPaths');
+
 
 const uploadDir = path.join(__dirname, '../../tmp/uploads');
 const outputDir = path.join(__dirname, '../../tmp/outputs');
@@ -299,10 +300,12 @@ const executeLibreOfficeCommand = (inputPath, outputPath, targetFormat) => {
  */
 const executeImageMagickCommand = (inputPath, outputPath, targetFormat) => {
   return new Promise((resolve) => {
-    // 使用magick命令将PDF转换为图片（Windows系统上convert是内置命令，容易冲突）
+    // 使用LibreOffice将PDF转换为图片（避免依赖Ghostscript）
     // 注意：PDF转图片会生成多个文件，这里只处理第一页
-    const tempOutputPath = `${outputPath.replace('.', '-%d.')}`;
-    const command = `"${magick}" -density 300 "${inputPath}" -quality 90 "${tempOutputPath}"`;
+    const outputDir = path.dirname(outputPath);
+    const inputFileName = path.basename(inputPath, path.extname(inputPath));
+    const tempOutputPath = path.join(outputDir, `${inputFileName}.jpg`);
+    const command = `"${soffice}" --headless --convert-to jpg:"impress_png_Export" --outdir "${outputDir}" "${inputPath}"`;
     
     console.log(`执行ImageMagick命令: ${command}`);
     
@@ -313,11 +316,12 @@ const executeImageMagickCommand = (inputPath, outputPath, targetFormat) => {
         return resolve({ success: false, message: '图片转换失败', error: stderr });
       }
       
-      // 检查生成的文件是否存在（第一页）
-      const firstPagePath = outputPath.replace('.', '-0.');
-      if (fs.existsSync(firstPagePath)) {
-        // 将第一页重命名为目标文件名
-        fs.renameSync(firstPagePath, outputPath);
+      // 检查生成的文件是否存在
+      if (fs.existsSync(tempOutputPath)) {
+        // 如果目标文件名与生成的文件名不同，则重命名
+        if (tempOutputPath !== outputPath) {
+          fs.renameSync(tempOutputPath, outputPath);
+        }
         
         return resolve({ 
           success: true, 
@@ -325,6 +329,7 @@ const executeImageMagickCommand = (inputPath, outputPath, targetFormat) => {
           outputPath: outputPath 
         });
       } else {
+        console.error(`未找到生成的图片文件: ${tempOutputPath}`);
         return resolve({ 
           success: false, 
           message: '图片转换成功，但未找到输出文件',
