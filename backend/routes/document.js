@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const { exec } = require('child_process');
 const { pdfToWord } = require('../converters/pdf2word');
+const { magick } = require('../config/toolPaths');
 
 const uploadDir = path.join(__dirname, '../../tmp/uploads');
 const outputDir = path.join(__dirname, '../../tmp/outputs');
@@ -298,10 +299,10 @@ const executeLibreOfficeCommand = (inputPath, outputPath, targetFormat) => {
  */
 const executeImageMagickCommand = (inputPath, outputPath, targetFormat) => {
   return new Promise((resolve) => {
-    // 使用convert命令将PDF转换为图片
+    // 使用magick命令将PDF转换为图片（Windows系统上convert是内置命令，容易冲突）
     // 注意：PDF转图片会生成多个文件，这里只处理第一页
     const tempOutputPath = `${outputPath.replace('.', '-%d.')}`;
-    const command = `convert -density 300 "${inputPath}" -quality 90 "${tempOutputPath}"`;
+    const command = `"${magick}" -density 300 "${inputPath}" -quality 90 "${tempOutputPath}"`;
     
     console.log(`执行ImageMagick命令: ${command}`);
     

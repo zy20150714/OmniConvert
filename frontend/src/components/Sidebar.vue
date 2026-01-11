@@ -206,7 +206,14 @@ import {
   FolderOpened
 } from '@element-plus/icons-vue';
 
-const activeMenu = ref('document');
+const props = defineProps({
+  activeMenu: {
+    type: String,
+    default: 'document'
+  }
+});
+
+const activeMenu = ref(props.activeMenu);
 
 // 监听外部activeMenu变化
 watch(() => props.activeMenu, (newVal) => {
@@ -218,14 +225,6 @@ const emit = defineEmits(['menu-select']);
 const handleMenuSelect = (index, indexPath) => {
   emit('menu-select', index, indexPath);
 };
-
-// 定义props
-const props = defineProps({
-  activeMenu: {
-    type: String,
-    default: 'document'
-  }
-});
 </script>
 
 <style scoped>

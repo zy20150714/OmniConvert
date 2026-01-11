@@ -9,6 +9,36 @@ const documentRoutes = require('./routes/document');
 const videoRoutes = require('./routes/video');
 const audioRoutes = require('./routes/audio');
 const imageRoutes = require('./routes/image');
+const tableRoutes = require('./routes/table');
+const archiveRoutes = require('./routes/archive');
+const toolPaths = require('./config/toolPaths');
+
+// 检查转换工具可用性
+const checkConversionTools = () => {
+  console.log('=== 转换工具可用性检查 ===');
+  
+  // 检查每个工具是否存在
+  Object.entries(toolPaths).forEach(([tool, toolPath]) => {
+    fs.access(toolPath, fs.constants.F_OK, (err) => {
+      if (err) {
+        console.error(`❌ ${tool} 不可用: ${toolPath}`);
+        console.error(`   错误信息: ${err.message}`);
+      } else {
+        // 尝试获取工具版本信息
+        exec(`"${toolPath}" --version`, { timeout: 5000 }, (versionErr, stdout) => {
+          if (versionErr) {
+            console.warn(`⚠️  ${tool} 存在但无法获取版本信息: ${toolPath}`);
+          } else {
+            console.log(`✅ ${tool} 可用: ${toolPath}`);
+            console.log(`   版本信息: ${stdout.split('\n')[0]}`);
+          }
+        });
+      }
+    });
+  });
+  
+  console.log('=============================');
+};
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -148,6 +178,8 @@ app.use('/api/convert/document', documentRoutes);
 app.use('/api/convert/video', videoRoutes);
 app.use('/api/convert/audio', audioRoutes);
 app.use('/api/convert/image', imageRoutes);
+app.use('/api/convert/table', tableRoutes);
+app.use('/api/convert/archive', archiveRoutes);
 
 // 下载接口
 app.get('/api/download/:fileName', (req, res) => {
@@ -169,4 +201,7 @@ app.get('/api/download/:fileName', (req, res) => {
 app.listen(PORT, () => {
   console.log(`万能转换工坊服务启动成功，监听端口 ${PORT}`);
   console.log(`健康检查地址: http://localhost:${PORT}/api/health`);
+  
+  // 检查转换工具可用性
+  checkConversionTools();
 });

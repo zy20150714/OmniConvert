@@ -14,7 +14,7 @@
         type="file" 
         class="file-input" 
         @change="handleFileChange"
-        accept="{{ acceptTypes }}"
+        :accept="acceptTypes"
       />
       <div class="upload-content">
         <el-icon class="upload-icon"><UploadFilled /></el-icon>

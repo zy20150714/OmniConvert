@@ -3,6 +3,7 @@ const router = express.Router();
 const path = require('path');
 const fs = require('fs');
 const { exec } = require('child_process');
+const { ffmpeg } = require('../config/toolPaths');
 
 const uploadDir = path.join(__dirname, '../../tmp/uploads');
 const outputDir = path.join(__dirname, '../../tmp/outputs');
@@ -131,27 +132,27 @@ const executeAudioFormatConvert = (inputPath, outputPath, targetFormat) => {
     switch (targetFormat) {
       case 'mp3':
         // 转换为MP3格式
-        command = `ffmpeg -i "${inputPath}" -codec:a libmp3lame -qscale:a 2 "${outputPath}"`;
+        command = `"${ffmpeg}" -i "${inputPath}" -codec:a libmp3lame -qscale:a 2 "${outputPath}"`;
         break;
       
       case 'wav':
         // 转换为WAV格式
-        command = `ffmpeg -i "${inputPath}" -codec:a pcm_s16le "${outputPath}"`;
+        command = `"${ffmpeg}" -i "${inputPath}" -codec:a pcm_s16le "${outputPath}"`;
         break;
       
       case 'flac':
         // 转换为FLAC格式
-        command = `ffmpeg -i "${inputPath}" -codec:a flac "${outputPath}"`;
+        command = `"${ffmpeg}" -i "${inputPath}" -codec:a flac "${outputPath}"`;
         break;
       
       case 'm4a':
         // 转换为M4A格式
-        command = `ffmpeg -i "${inputPath}" -codec:a aac -b:a 128k "${outputPath}"`;
+        command = `"${ffmpeg}" -i "${inputPath}" -codec:a aac -b:a 128k "${outputPath}"`;
         break;
       
       case 'ogg':
         // 转换为OGG格式
-        command = `ffmpeg -i "${inputPath}" -codec:a libvorbis -qscale:a 6 "${outputPath}"`;
+        command = `"${ffmpeg}" -i "${inputPath}" -codec:a libvorbis -qscale:a 6 "${outputPath}"`;
         break;
       
       default:
@@ -200,7 +201,7 @@ const executeAudioCut = (inputPath, outputPath, options) => {
   return new Promise((resolve) => {
     const { start = 0, duration } = options;
     
-    let command = `ffmpeg -i "${inputPath}" -ss ${start}`;
+    let command = `"${ffmpeg}" -i "${inputPath}" -ss ${start}`;
     
     if (duration) {
       command += ` -t ${duration}`;
@@ -242,7 +243,7 @@ const executeAudioCut = (inputPath, outputPath, options) => {
 const executeAudioDenoise = (inputPath, outputPath) => {
   return new Promise((resolve) => {
     // 使用FFmpeg的afftdn滤镜进行基础降噪
-    const command = `ffmpeg -i "${inputPath}" -af afftdn=nf=-25 "${outputPath}"`;
+    const command = `"${ffmpeg}" -i "${inputPath}" -af afftdn=nf=-25 "${outputPath}"`;
     
     console.log(`执行音频降噪命令: ${command}`);
     
@@ -281,7 +282,7 @@ const executeAudioVolume = (inputPath, outputPath, options) => {
     const { volume = 1.0 } = options;
     
     // 使用FFmpeg调整音量
-    const command = `ffmpeg -i "${inputPath}" -af "volume=${volume}" "${outputPath}"`;
+    const command = `"${ffmpeg}" -i "${inputPath}" -af "volume=${volume}" "${outputPath}"`;
     
     console.log(`执行音量调整命令: ${command}`);
     

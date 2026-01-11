@@ -3,6 +3,7 @@ const router = express.Router();
 const path = require('path');
 const fs = require('fs');
 const { exec } = require('child_process');
+const { ffmpeg } = require('../config/toolPaths');
 
 const uploadDir = path.join(__dirname, '../../tmp/uploads');
 const outputDir = path.join(__dirname, '../../tmp/outputs');
@@ -156,32 +157,32 @@ const executeVideoConvertCommand = (inputPath, outputPath, targetFormat) => {
     switch (targetFormat) {
       case 'avi':
         // MP4转AVI，使用libxvid编码
-        command = `ffmpeg -i "${inputPath}" -c:v libxvid -q:v 4 -c:a libmp3lame -q:a 2 "${outputPath}"`;
+        command = `"${ffmpeg}" -i "${inputPath}" -c:v libxvid -q:v 4 -c:a libmp3lame -q:a 2 "${outputPath}"`;
         break;
       
       case 'mkv':
         // 视频转MKV，保持原始编码
-        command = `ffmpeg -i "${inputPath}" -c copy "${outputPath}"`;
+        command = `"${ffmpeg}" -i "${inputPath}" -c copy "${outputPath}"`;
         break;
       
       case 'mov':
         // 视频转MOV，使用H.264编码
-        command = `ffmpeg -i "${inputPath}" -c:v libx264 -preset medium -crf 23 -c:a aac -b:a 128k "${outputPath}"`;
+        command = `"${ffmpeg}" -i "${inputPath}" -c:v libx264 -preset medium -crf 23 -c:a aac -b:a 128k "${outputPath}"`;
         break;
       
       case 'flv':
         // 视频转FLV，使用FLV1编码
-        command = `ffmpeg -i "${inputPath}" -c:v flv1 -c:a mp3 "${outputPath}"`;
+        command = `"${ffmpeg}" -i "${inputPath}" -c:v flv1 -c:a mp3 "${outputPath}"`;
         break;
       
       case 'webm':
         // 视频转WEBM，使用VP9编码
-        command = `ffmpeg -i "${inputPath}" -c:v libvpx-vp9 -crf 30 -b:v 0 -c:a libopus "${outputPath}"`;
+        command = `"${ffmpeg}" -i "${inputPath}" -c:v libvpx-vp9 -crf 30 -b:v 0 -c:a libopus "${outputPath}"`;
         break;
       
       default:
         // 默认使用H.264编码
-        command = `ffmpeg -i "${inputPath}" -c:v libx264 -preset medium -crf 23 -c:a aac -b:a 128k "${outputPath}"`;
+        command = `"${ffmpeg}" -i "${inputPath}" -c:v libx264 -preset medium -crf 23 -c:a aac -b:a 128k "${outputPath}"`;
     }
     
     console.log(`执行视频转换命令: ${command}`);
@@ -232,17 +233,17 @@ const executeAudioExtractCommand = (inputPath, outputPath, targetFormat) => {
     switch (targetFormat) {
       case 'mp3':
         // 提取MP3音频
-        command = `ffmpeg -i "${inputPath}" -vn -c:a libmp3lame -b:a 192k "${outputPath}"`;
+        command = `"${ffmpeg}" -i "${inputPath}" -vn -c:a libmp3lame -b:a 192k "${outputPath}"`;
         break;
       
       case 'aac':
         // 提取AAC音频
-        command = `ffmpeg -i "${inputPath}" -vn -c:a aac -b:a 128k "${outputPath}"`;
+        command = `"${ffmpeg}" -i "${inputPath}" -vn -c:a aac -b:a 128k "${outputPath}"`;
         break;
       
       case 'wav':
         // 提取WAV音频（无损）
-        command = `ffmpeg -i "${inputPath}" -vn -c:a pcm_s16le "${outputPath}"`;
+        command = `"${ffmpeg}" -i "${inputPath}" -vn -c:a pcm_s16le "${outputPath}"`;
         break;
       
       default:
@@ -283,7 +284,7 @@ const executeAudioExtractCommand = (inputPath, outputPath, targetFormat) => {
 const executeVideoToGifCommand = (inputPath, outputPath) => {
   return new Promise((resolve) => {
     // 视频转GIF命令，限制帧率和尺寸以控制文件大小
-    const command = `ffmpeg -i "${inputPath}" -vf "fps=15,scale=640:-1:flags=lanczos" -c:v gif "${outputPath}"`;
+    const command = `"${ffmpeg}" -i "${inputPath}" -vf "fps=15,scale=640:-1:flags=lanczos" -c:v gif "${outputPath}"`;
     
     console.log(`执行视频转GIF命令: ${command}`);
     
@@ -319,7 +320,7 @@ const executeVideoToGifCommand = (inputPath, outputPath) => {
 const executeGifToVideoCommand = (inputPath, outputPath) => {
   return new Promise((resolve) => {
     // GIF转MP4命令
-    const command = `ffmpeg -i "${inputPath}" -c:v libx264 -crf 23 -pix_fmt yuv420p "${outputPath}"`;
+    const command = `"${ffmpeg}" -i "${inputPath}" -c:v libx264 -crf 23 -pix_fmt yuv420p "${outputPath}"`;
     
     console.log(`执行GIF转视频命令: ${command}`);
     

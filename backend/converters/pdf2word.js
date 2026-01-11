@@ -1,6 +1,7 @@
 const { exec } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const { soffice } = require('../config/toolPaths');
 
 /**
  * PDF转Word转换器
@@ -26,19 +27,8 @@ const pdfToWord = async (inputPath, outputPath) => {
     const outputDirPath = path.dirname(outputPath);
     const baseOutputName = path.basename(outputPath, path.extname(outputPath));
     
-    let command = '';
-    
-    // 根据操作系统选择不同的命令
-    if (process.platform === 'win32') {
-      // Windows系统
-      command = `libreoffice --headless --convert-to docx:"MS Word 2007 XML" "${inputPath}" --outdir "${outputDirPath}"`;
-    } else if (process.platform === 'darwin') {
-      // macOS系统
-      command = `/Applications/LibreOffice.app/Contents/MacOS/soffice --headless --convert-to docx:"MS Word 2007 XML" "${inputPath}" --outdir "${outputDirPath}"`;
-    } else {
-      // Linux系统
-      command = `libreoffice --headless --convert-to docx:"MS Word 2007 XML" "${inputPath}" --outdir "${outputDirPath}"`;
-    }
+    // 使用中央配置的soffice路径
+    const command = `"${soffice}" --headless --convert-to docx:"MS Word 2007 XML" "${inputPath}" --outdir "${outputDirPath}"`;
 
     console.log(`执行PDF转Word命令: ${command}`);
 
@@ -61,7 +51,9 @@ const pdfToWord = async (inputPath, outputPath) => {
       console.log(`PDF转Word成功，stdout: ${stdout}`);
       
       // LibreOffice会将文件输出到指定目录，文件名与输入文件相同，后缀为.docx
-      const generatedOutputPath = path.join(outputDirPath, `${path.basename(inputPath, '.pdf')}.docx`);
+      const inputFileName = path.basename(inputPath);
+      const inputBaseName = inputFileName.substring(0, inputFileName.lastIndexOf('.'));
+      const generatedOutputPath = path.join(outputDirPath, `${inputBaseName}.docx`);
       
       // 检查生成的文件是否存在
       if (fs.existsSync(generatedOutputPath)) {
