@@ -291,9 +291,14 @@ const executeLibreOfficeCommand = (inputPath, outputPath, targetFormat) => {
  */
 const executeImageMagickCommand = (inputPath, outputPath, targetFormat) => {
   return new Promise((resolve) => {
-    // 使用ImageMagick将PDF转换为图片
-    // 注意：PDF转图片会生成多个文件，这里只处理第一页
-    const command = `"${magick}" "${inputPath}[0]" "${outputPath}"`;
+    // 使用ImageMagick将PDF的所有页面转换为图片
+    // 生成的文件将被命名为 outputPath-0.jpg, outputPath-1.jpg, ...
+    const outputDir = path.dirname(outputPath);
+    const baseName = path.basename(outputPath, path.extname(outputPath));
+    const format = path.extname(outputPath).substring(1);
+    const pattern = path.join(outputDir, `${baseName}-%d.${format}`);
+    
+    const command = `"${magick}" "${inputPath}" "${pattern}"`;
     
     console.log(`执行ImageMagick命令: ${command}`);
     
@@ -304,20 +309,21 @@ const executeImageMagickCommand = (inputPath, outputPath, targetFormat) => {
         return resolve({ success: false, message: '图片转换失败', error: stderr });
       }
       
-      // 检查生成的文件是否存在
-      if (fs.existsSync(tempOutputPath)) {
-        // 如果目标文件名与生成的文件名不同，则重命名
-        if (tempOutputPath !== outputPath) {
-          fs.renameSync(tempOutputPath, outputPath);
-        }
-        
+      // 检查是否生成了任何图片文件
+      const firstPagePath = path.join(outputDir, `${baseName}-0.${format}`);
+      if (fs.existsSync(firstPagePath)) {
+        // 返回第一个页面的路径作为主要输出
         return resolve({ 
           success: true, 
           message: '图片转换成功', 
-          outputPath: outputPath 
+          outputPath: firstPagePath,
+          // 可选：返回所有生成的文件列表
+          allPages: fs.readdirSync(outputDir).filter(file => 
+            file.startsWith(`${baseName}-`) && file.endsWith(`.${format}`)
+          ).sort()
         });
       } else {
-        console.error(`未找到生成的图片文件: ${tempOutputPath}`);
+        console.error(`未找到生成的图片文件`);
         return resolve({ 
           success: false, 
           message: '图片转换成功，但未找到输出文件',

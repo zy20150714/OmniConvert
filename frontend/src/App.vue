@@ -143,7 +143,17 @@ const handleTaskAdded = (task) => {
 
 // 下载文件
 const downloadFile = (url) => {
-  window.open(url, '_blank');
+  // 创建一个隐藏的a标签，设置下载属性
+  const link = document.createElement('a');
+  link.href = url;
+  // 从URL中提取文件名
+  const fileName = url.split('/').pop();
+  link.download = fileName;
+  // 模拟点击下载
+  document.body.appendChild(link);
+  link.click();
+  // 清理
+  document.body.removeChild(link);
 };
 
 // 获取状态类型
