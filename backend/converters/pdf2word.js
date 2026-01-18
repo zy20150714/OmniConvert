@@ -27,8 +27,8 @@ const pdfToWord = async (inputPath, outputPath) => {
     const outputDirPath = path.dirname(outputPath);
     const baseOutputName = path.basename(outputPath, path.extname(outputPath));
     
-    // 使用中央配置的soffice路径
-    const command = `"${soffice}" --headless --convert-to docx:"MS Word 2007 XML" "${inputPath}" --outdir "${outputDirPath}"`;
+    // 使用中央配置的soffice路径，简化格式参数
+    const command = `"${soffice}" --headless --convert-to docx "${inputPath}" --outdir "${outputDirPath}"`;
 
     console.log(`执行PDF转Word命令: ${command}`);
 
@@ -48,12 +48,32 @@ const pdfToWord = async (inputPath, outputPath) => {
         return resolve({ success: false, message: errorMsg, error: stderr });
       }
 
-      console.log(`PDF转Word成功，stdout: ${stdout}`);
+      console.log(`PDF转Word命令执行成功`);
+      console.log(`stdout: ${stdout}`);
+      console.log(`stderr: ${stderr}`);
       
-      // LibreOffice会将文件输出到指定目录，文件名与输入文件相同，后缀为.docx
+      // 尝试查找生成的.docx文件
       const inputFileName = path.basename(inputPath);
       const inputBaseName = inputFileName.substring(0, inputFileName.lastIndexOf('.'));
-      const generatedOutputPath = path.join(outputDirPath, `${inputBaseName}.docx`);
+      
+      // 首先尝试查找与输入文件同名的.docx文件
+      let generatedOutputPath = path.join(outputDirPath, `${inputBaseName}.docx`);
+      
+      // 如果找不到，尝试查找输出目录中第一个.docx文件
+      if (!fs.existsSync(generatedOutputPath)) {
+        console.log(`未找到预期的输出文件: ${generatedOutputPath}`);
+        
+        // 列出输出目录中的所有文件
+        const files = fs.readdirSync(outputDirPath);
+        console.log(`输出目录中的文件: ${files}`);
+        
+        // 查找第一个.docx文件
+        const docxFiles = files.filter(file => file.endsWith('.docx'));
+        if (docxFiles.length > 0) {
+          generatedOutputPath = path.join(outputDirPath, docxFiles[0]);
+          console.log(`找到替代输出文件: ${generatedOutputPath}`);
+        }
+      }
       
       // 检查生成的文件是否存在
       if (fs.existsSync(generatedOutputPath)) {
@@ -69,6 +89,9 @@ const pdfToWord = async (inputPath, outputPath) => {
         });
       } else {
         console.error('PDF转Word成功，但未找到输出文件');
+        // 列出输出目录中的所有文件，方便调试
+        const files = fs.readdirSync(outputDirPath);
+        console.log(`输出目录中的文件: ${files}`);
         return resolve({ 
           success: false, 
           message: '转换成功，但未找到输出文件',
